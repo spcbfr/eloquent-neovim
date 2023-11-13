@@ -186,6 +186,10 @@ require('lazy').setup({
   },
 
   {
+    "jwalton512/vim-blade",
+  },
+
+  {
     -- Set lualine as statusline
     'nvim-lualine/lualine.nvim',
     -- See `:help lualine.txt`
@@ -233,12 +237,90 @@ require('lazy').setup({
   },
 
   {
-    -- Highlight, edit, and navigate code
-    'nvim-treesitter/nvim-treesitter',
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
     dependencies = {
-      'nvim-treesitter/nvim-treesitter-textobjects',
+      "nvim-treesitter/nvim-treesitter-textobjects",
     },
-    build = ':TSUpdate',
+    event = "VeryLazy",
+    main = "nvim-treesitter.configs",
+    opts = {
+      ensure_installed = {
+        "bash",
+        "blade",
+        "css",
+        "go",
+        "gomod",
+        "html",
+        "javascript",
+        "json",
+        "lua",
+        "luadoc",
+        "markdown",
+        "markdown_inline",
+        "nix",
+        "org",
+        "php",
+        "phpdoc",
+        "query",
+        "rust",
+        "sql",
+        "svelte",
+        "typescript",
+        "regex",
+        "vim",
+        "yaml",
+      },
+      highlight = {
+        enable = true,
+        additional_vim_regex_highlighting = { "org" },
+      },
+      indent = {
+        enable = true,
+      },
+      textobjects = {
+        select = {
+          enable = true,
+          lookahead = true,
+          keymaps = {
+            ["af"] = "@function.outer",
+            ["if"] = "@function.inner",
+            ["ac"] = "@conditional.outer",
+            ["ic"] = "@conditional.inner",
+            ["al"] = "@loop.outer",
+            ["il"] = "@loop.inner",
+          },
+        },
+      },
+      incremental_selection = {
+        enable = true,
+        keymaps = {
+          init_selection = "gnn",
+          node_incremental = "grn",
+          scope_incremental = "grc",
+          node_decremental = "grm",
+        },
+      },
+    },
+    config = function(plug, config)
+      local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+      parser_config.blade = {
+        install_info = {
+          url = "https://github.com/EmranMR/tree-sitter-blade",
+          files = {"src/parser.c"},
+          branch = "main",
+        },
+        filetype = "blade"
+      }
+
+      vim.filetype.add({
+        pattern = {
+          ['.*%.blade%.php'] = 'blade',
+        }
+      })
+
+      require(plug.main).setup(config);
+    end,
   },
 
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
@@ -388,6 +470,10 @@ vim.keymap.set('n', '<leader>/', function()
 end, { desc = '[/] Fuzzily search in current buffer' })
 
 vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
+vim.keymap.set('n', '<leader>gn', function()
+  require('neogit').open() 
+end, { desc = 'Open [N]eo[G]it' })
+
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
@@ -396,74 +482,6 @@ vim.keymap.set('n', '<leader>sG', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by 
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
 
--- [[ Configure Treesitter ]]
--- See `:help nvim-treesitter`
--- Defer Treesitter setup after first render to improve startup time of 'nvim {filename}'
-vim.defer_fn(function()
-  require('nvim-treesitter.configs').setup {
-    -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'lua', 'tsx', 'javascript', 'typescript', 'bash', 'php' },
-
-    -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
-    auto_install = false,
-
-    highlight = { enable = true },
-    indent = { enable = true },
-    incremental_selection = {
-      enable = true,
-      keymaps = {
-        init_selection = '<c-space>',
-        node_incremental = '<c-space>',
-        scope_incremental = '<c-s>',
-        node_decremental = '<M-space>',
-      },
-    },
-    textobjects = {
-      select = {
-        enable = true,
-        lookahead = true, -- Automatically jump forward to textobj, similar to targets.vim
-        keymaps = {
-          -- You can use the capture groups defined in textobjects.scm
-          ['aa'] = '@parameter.outer',
-          ['ia'] = '@parameter.inner',
-          ['af'] = '@function.outer',
-          ['if'] = '@function.inner',
-          ['ac'] = '@class.outer',
-          ['ic'] = '@class.inner',
-        },
-      },
-      move = {
-        enable = true,
-        set_jumps = true, -- whether to set jumps in the jumplist
-        goto_next_start = {
-          [']m'] = '@function.outer',
-          [']]'] = '@class.outer',
-        },
-        goto_next_end = {
-          [']M'] = '@function.outer',
-          [']['] = '@class.outer',
-        },
-        goto_previous_start = {
-          ['[m'] = '@function.outer',
-          ['[['] = '@class.outer',
-        },
-        goto_previous_end = {
-          ['[M'] = '@function.outer',
-          ['[]'] = '@class.outer',
-        },
-      },
-      swap = {
-        enable = true,
-        swap_next = {
-          ['<leader>a'] = '@parameter.inner',
-        },
-        swap_previous = {
-          ['<leader>A'] = '@parameter.inner',
-        },
-      },
-    },
-  }
-end, 0)
 
 -- [[ Configure LSP ]]
 --  This function gets run when an LSP connects to a particular buffer.
@@ -541,6 +559,7 @@ local servers = {
   -- rust_analyzer = {},
   -- tsserver = {},
   -- html = { filetypes = { 'html', 'twig', 'hbs'} },
+  tailwindcss = { enable = true, filetypes = {"blade", "html", "svelte"} },
   phpactor = {},
 
   lua_ls = {
