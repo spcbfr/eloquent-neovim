@@ -12,9 +12,8 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
--- [[ Install `lazy.nvim` plugin manager ]]
---    https://github.com/folke/lazy.nvim
---    `:help lazy.nvim.txt` for more info
+-- Installing lazy.nvim package manager
+-- if it's not installed already
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system {
@@ -28,21 +27,42 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- [[ Configure plugins ]]
--- NOTE: Here is where you install your plugins.
---  You can configure plugins using the `config` key.
---
---  You can also configure plugins after the setup call,
---    as they will be available in your neovim runtime.
-require('lazy').setup({
-  -- NOTE: First, some plugins that don't require any configuration
 
+require('lazy').setup({
+  -- First, some plugins that don't require any configuration
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
+
+  -- Blade syntax highlighting
+  "jwalton512/vim-blade",
+
+  {
+    "adalessa/laravel.nvim",
+    dependencies = {
+      "nvim-telescope/telescope.nvim",
+      "tpope/vim-dotenv",
+      "MunifTanjim/nui.nvim",
+    },
+    cmd = { "Sail", "Artisan", "Composer", "Npm", "Yarn", "Laravel" },
+    keys = {
+      { "<leader>la", ":Laravel artisan<cr>" },
+      { "<leader>lr", ":Laravel routes<cr>" },
+      { "<leader>lm", ":Laravel related<cr>" },
+      {
+        "<leader>lt",
+        function()
+          require("laravel.tinker").send_to_tinker()
+        end,
+        mode = "v",
+        desc = "Laravel Application Routes",
+      },
+    },
+    event = { "VeryLazy" },
+  },
 
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
@@ -76,6 +96,12 @@ require('lazy').setup({
   },
 
   {
+    'windwp/nvim-autopairs',
+    event = "InsertEnter",
+    opts = {} -- this is equalent to setup({}) function
+  },
+
+  {
     -- Autocompletion
     'hrsh7th/nvim-cmp',
     dependencies = {
@@ -92,12 +118,12 @@ require('lazy').setup({
   },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim', opts = {} },
+  { 'folke/which-key.nvim',  opts = {} },
 
   {
     'stevearc/oil.nvim',
     opts = {},
-    config = function ()
+    config = function()
       require("oil").setup()
     end,
 
@@ -153,9 +179,6 @@ require('lazy').setup({
     end,
   },
 
-  {
-    "jwalton512/vim-blade",
-  },
 
   {
     -- Set lualine as statusline
@@ -180,7 +203,8 @@ require('lazy').setup({
     opts = {},
   },
 
-  -- "gc" to comment visual regions/lines
+  -- `gc` for line comments
+  -- `gb` for block comments
   { 'numToStr/Comment.nvim', opts = {} },
 
   -- Fuzzy Finder (files, lsp, etc)
@@ -282,7 +306,7 @@ require('lazy').setup({
       parser_config.blade = {
         install_info = {
           url = "https://github.com/EmranMR/tree-sitter-blade",
-          files = {"src/parser.c"},
+          files = { "src/parser.c" },
           branch = "main",
         },
         filetype = "blade"
@@ -298,24 +322,11 @@ require('lazy').setup({
     end,
   },
 
-  -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
-  --       These are some example plugins that I've included in the kickstart repository.
-  --       Uncomment any of the lines below to enable them.
-  -- require 'kickstart.plugins.autoformat',
+  require 'kickstart.plugins.autoformat',
   -- require 'kickstart.plugins.debug',
 
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    You can use this folder to prevent any conflicts with this init.lua if you're interested in keeping
-  --    up-to-date with whatever is in the kickstart repo.
-  --    Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  --
-  --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }, {})
-
--- [[ Setting options ]]
--- See `:help vim.o`
--- NOTE: You can change these options as you wish!
 
 -- Set highlight on search
 vim.o.hlsearch = false
@@ -363,6 +374,9 @@ vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 -- Remap for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+vim.keymap.set('n', '<leader>bd', ':bd<CR>', { desc = 'Delete buffer' })
+vim.keymap.set('n', '<leader>bs', ':w<CR>', { desc = 'Save buffer' })
+vim.keymap.set('n', '<leader>qq', ':wq<CR>', { desc = 'Quit vim' })
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
@@ -396,7 +410,7 @@ require('telescope').setup {
 
 -- Enable telescope fzf native, if installed
 pcall(require('telescope').load_extension, 'fzf')
-require'telescope'.load_extension('project')
+require 'telescope'.load_extension('project')
 
 -- Telescope live_grep in git root
 -- Function to find the git root directory based on the current buffer's path
@@ -427,7 +441,7 @@ local function live_grep_git_root()
   local git_root = find_git_root()
   if git_root then
     require('telescope.builtin').live_grep({
-      search_dirs = {git_root},
+      search_dirs = { git_root },
     })
   end
 end
@@ -452,7 +466,7 @@ end, { desc = 'Open [N]eo[G]it' })
 
 
 vim.keymap.set('n', '<leader>pp', function()
-  require'telescope'.extensions.project.project{}
+  require 'telescope'.extensions.project.project {}
 end, { desc = 'O[p]en [P]rojects view' })
 
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
@@ -525,14 +539,6 @@ require('which-key').register {
 require('mason').setup()
 require('mason-lspconfig').setup()
 
--- Enable the following language servers
---  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
---
---  Add any additional override configuration in the following tables. They will be passed to
---  the `settings` field of the server config. You must look up that documentation yourself.
---
---  If you want to override the default filetypes that your language server will attach to you can
---  define the property 'filetypes' to the map in question.
 local servers = {
   -- clangd = {},
   -- gopls = {},
@@ -540,7 +546,7 @@ local servers = {
   -- rust_analyzer = {},
   -- tsserver = {},
   -- html = { filetypes = { 'html', 'twig', 'hbs'} },
-  tailwindcss = { enable = true, filetypes = {"blade", "html", "svelte"} },
+  tailwindcss = { enable = true, filetypes = { "blade", "html", "svelte" } },
   phpactor = {},
 
   lua_ls = {
@@ -548,7 +554,7 @@ local servers = {
       workspace = { checkThirdParty = false },
       telemetry = { enable = false },
       diagnostics = {
-        disable = {"missing-fields"}
+        disable = { "missing-fields" }
       }
     },
   },
